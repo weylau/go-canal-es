@@ -1,0 +1,8 @@
+# es连接地址
+es_addr = "111"
+
+# 日志级别
+log_level = "debug"
+
+# debug 为true时，日志直接输出在控制台，false时写入文件
+debug = true
