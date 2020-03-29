@@ -6,3 +6,9 @@ log_level = "debug"
 
 # debug 为true时，日志直接输出在控制台，false时写入文件
 debug = true
+
+# kafka配置
+kafka_version = "1.1.0"
+consumer_brocks = "172.16.57.110:9095"
+consumer_group = "example_group"
+consumer_topics = "example"

@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"github.com/BurntSushi/toml"
@@ -20,6 +20,11 @@ type Config struct {
 
 	SkipNoPkTable bool `toml:"skip_no_pk_table"`
 	Debug bool `toml:"debug"`
+
+	KafkaVersion string `toml:"kafka_version"`
+	ConsumerBrocks string `toml:"consumer_brocks"`
+	ConsumerGroup string `toml:"consumer_group"`
+	ConsumerTopics string `toml:"consumer_topics"`
 }
 
 type TomlDuration struct {

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"go-canal-es/app"
+	"go-canal-es/app/config"
 )
 
 var configFile = flag.String("config", "./etc/config.toml", "go-canal-es config file")
@@ -13,10 +14,10 @@ func main() {
 	application,err := app.Default(*configFile)
 	flag.Parse()
 	if *es_addr != "" {
-		app.Conf.ESAddr = *es_addr
+		config.Conf.ESAddr = *es_addr
 	}
 	if *logLevel != "" {
-		app.Conf.LogLevel = *logLevel
+		config.Conf.LogLevel = *logLevel
 	}
 	if err != nil {
 		panic(error(err))

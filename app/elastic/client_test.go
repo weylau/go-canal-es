@@ -3,11 +3,12 @@ package elastic
 import (
 	"flag"
 	"fmt"
+	"go-canal-es/app"
 	"testing"
 )
 
 type elasticTest struct {
-	c *Client
+	c *app.Client
 }
 
 var host = flag.String("host", "172.16.57.110", "Elasticsearch host")
@@ -17,11 +18,11 @@ var elasticTestClient *elasticTest
 
 func TestMain(m *testing.M) {
 	elasticTestClient = &elasticTest{}
-	cfg := new(ClientConfig)
+	cfg := new(app.ClientConfig)
 	cfg.Addr = fmt.Sprintf("%s:%d", *host, *port)
 	cfg.User = ""
 	cfg.Password = ""
-	elasticTestClient.c = NewClient(cfg)
+	elasticTestClient.c = app.NewClient(cfg)
 	m.Run()
 }
 
@@ -58,7 +59,7 @@ func TestGetMapping(t *testing.T) {
 
 
 func TestBulk(t *testing.T) {
-	var bulk_res  []*BulkRequest
+	var bulk_res  []*app.BulkRequest
 	index := "testindex002"
 	docType := "testtype002"
 	data := map[string]interface{}{}
@@ -71,12 +72,12 @@ func TestBulk(t *testing.T) {
 	data["email"] = "email"
 	data["intro"] = "intro"
 	data["stars"] = "stars"
-	bulk_res = append(bulk_res, &BulkRequest{
-		Action:ActionCreate,
-		Index: index,
-		Type: docType,
-		ID: "1",
-		Data: data,
+	bulk_res = append(bulk_res, &app.BulkRequest{
+		Action: app.ActionCreate,
+		Index:  index,
+		Type:   docType,
+		ID:     "1",
+		Data:   data,
 	})
 
 	res, err := elasticTestClient.c.Bulk(bulk_res)
