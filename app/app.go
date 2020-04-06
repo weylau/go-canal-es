@@ -53,7 +53,7 @@ func (consumer *ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSessio
 		canalData := CanalData{}
 		json.Unmarshal(message.Value, &canalData)
 		fmt.Println(canalData.Table)
-		consumer.app.syncCh <- canalData
+		consumer.app.canalDataChan <- canalData
 		session.MarkMessage(message, "")
 	}
 
@@ -67,7 +67,7 @@ type App struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	syncCh chan interface{}
+	canalDataChan chan interface{}
 
 	rules map[string]*config.Rule
 
@@ -78,7 +78,7 @@ type App struct {
 
 func Default(config_file string) (*App, error) {
 	app := &App{}
-	app.syncCh = make(chan interface{}, 4096)
+	app.canalDataChan = make(chan interface{}, 4096)
 	app.done = make(chan struct{})
 	app.rules = make(map[string]*config.Rule)
 	app.ctx, app.cancel = context.WithCancel(context.Background())
@@ -164,11 +164,10 @@ func (this *App) pushEs(done chan struct{}) {
 
 	for {
 		select {
-		case v := <-this.syncCh:
+		case v := <-this.canalDataChan:
 			switch v := v.(type) {
 			case CanalData:
-				bulkRequest := this.CanalDataToBulkRequest(&v)
-
+				bulkRequest := this.makeBulkRequest(&v)
 				res, err := this.es.Bulk(bulkRequest)
 				if err != nil {
 					this.cancel()
@@ -244,17 +243,16 @@ func (this *App) close() {
 	this.wg.Wait()
 }
 
-func (this *App) CanalDataToBulkRequest(canalData *CanalData) []*elastic.BulkRequest {
+func (this *App) makeBulkRequest(canalData *CanalData) []*elastic.BulkRequest {
 	canalType := strings.ToLower(canalData.Type)
-	canalRuleKey := ruleKey(canalData.Database, canalData.Table)
-	if rule, ok := this.rules[canalRuleKey]; ok {
-		fmt.Println("rule:", rule)
+	ruleKey := ruleKey(canalData.Database, canalData.Table)
+	if rule, ok := this.rules[ruleKey]; ok {
 		bulkReqs := make([]*elastic.BulkRequest, 0, len(canalData.Data.([]interface{})))
 		switch canalType {
 		case UpdateAction, InsertAction:
 			for _, v := range canalData.Data.([]interface{}) {
 				if id, ok := v.(map[string]interface{})[rule.ID]; ok {
-					req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: id.(string), Action: IndexAction}
+					req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: id.(string), Action: elastic.ActionIndex}
 					req.Data = make(map[string]interface{})
 					for field, value := range v.(map[string]interface{}) {
 						if _, ok := rule.FieldMapping[field]; ok {
@@ -262,19 +260,25 @@ func (this *App) CanalDataToBulkRequest(canalData *CanalData) []*elastic.BulkReq
 						}
 					}
 					bulkReqs = append(bulkReqs, req)
+				} else {
+					loger.Loger.Errorf("the data primary id is not found,ruleKey:%v,data:%v", ruleKey, v)
 				}
 
 			}
 		case DeleteAction:
 			for _, v := range canalData.Data.([]interface{}) {
 				if id, ok := v.(map[string]interface{})[rule.ID]; ok {
-					req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: id.(string), Action: canalType}
+					req := &elastic.BulkRequest{Index: rule.Index, Type: rule.Type, ID: id.(string), Action: elastic.ActionDelete}
 					bulkReqs = append(bulkReqs, req)
+				} else {
+					loger.Loger.Errorf("the data primary id is not found,ruleKey:%v,data:%v", ruleKey, v)
 				}
 
 			}
 		}
 		return bulkReqs
+	} else {
+		loger.Loger.Errorf("rule is undefined,ruleKey:%v", ruleKey)
 	}
 
 	return nil
