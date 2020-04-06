@@ -1,5 +1,5 @@
 # es连接地址
-es_addr = "111"
+es_addr = "172.16.57.112:9200"
 
 # 日志级别
 log_level = "debug"
@@ -12,3 +12,26 @@ kafka_version = "1.1.0"
 consumer_brocks = "172.16.57.110:9095"
 consumer_group = "example_group"
 consumer_topics = "example"
+
+[[rule]]
+# mysql数据库
+database = "db_user"
+# mysql数据库
+table = "user"
+# es对应的index
+index = "db_user"
+# es对应的type
+type = "user"
+# mysql表主键
+id = "id"
+
+[rule.field]
+id = "id"
+username = "username"
+password = "password"
+realname = "realname"
+mobile = "mobile"
+email = "email"
+intro = "intro"
+
+

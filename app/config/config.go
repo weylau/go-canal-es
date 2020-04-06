@@ -19,13 +19,17 @@ type Config struct {
 	FlushBulkTime TomlDuration `toml:"flush_bulk_time"`
 
 	SkipNoPkTable bool `toml:"skip_no_pk_table"`
-	Debug bool `toml:"debug"`
+	Debug         bool `toml:"debug"`
 
-	KafkaVersion string `toml:"kafka_version"`
+	KafkaVersion   string `toml:"kafka_version"`
 	ConsumerBrocks string `toml:"consumer_brocks"`
-	ConsumerGroup string `toml:"consumer_group"`
+	ConsumerGroup  string `toml:"consumer_group"`
 	ConsumerTopics string `toml:"consumer_topics"`
+
+	Rules []*Rule `toml:"rule"`
 }
+
+
 
 type TomlDuration struct {
 	time.Duration
