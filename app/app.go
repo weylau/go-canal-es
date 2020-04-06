@@ -52,7 +52,7 @@ func (consumer *ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSessio
 	for message := range claim.Messages() {
 		canalData := CanalData{}
 		json.Unmarshal(message.Value, &canalData)
-		fmt.Println(canalData.Table)
+		fmt.Printf("database:%v,table:%v,type:%v\n",canalData.Database,canalData.Table,canalData.Type)
 		consumer.app.canalDataChan <- canalData
 		session.MarkMessage(message, "")
 	}
@@ -74,13 +74,14 @@ type App struct {
 	consumerHandler *ConsumerHandler
 
 	done chan struct{}
+
 }
 
 func Default(config_file string) (*App, error) {
 	app := &App{}
 	app.canalDataChan = make(chan interface{}, 4096)
-	app.done = make(chan struct{})
 	app.rules = make(map[string]*config.Rule)
+	app.done = make(chan struct{}, 2)
 	app.ctx, app.cancel = context.WithCancel(context.Background())
 	app.wg = &sync.WaitGroup{}
 	app.consumerHandler = &ConsumerHandler{
@@ -135,6 +136,7 @@ func (this *App) Run() {
 	go func() {
 		defer this.wg.Done()
 		this.start()
+		this.end()
 	}()
 	select {
 	case n := <-sc:
@@ -149,17 +151,22 @@ func (this *App) Run() {
 
 func (this *App) start() {
 	this.wg.Add(2)
-	done := make(chan struct{}, 2)
-	go this.consumer(done)
-	go this.pushEs(done)
-	<-done
-	<-done
+	go this.consumer()
+	go this.push()
 }
 
-func (this *App) pushEs(done chan struct{}) {
+func (this *App)  end(){
+	defer func() {
+		close(this.done)
+	}()
+	<-this.done
+	<-this.done
+}
+
+func (this *App) push() {
 	defer this.wg.Done()
 	defer func() {
-		done <- struct{}{}
+		this.done <- struct{}{}
 	}()
 
 	for {
@@ -180,10 +187,9 @@ func (this *App) pushEs(done chan struct{}) {
 			}
 		default:
 			select {
-			case <-this.done:
+			case <-this.ctx.Done():
 				return
 			default:
-
 			}
 
 		}
@@ -191,10 +197,10 @@ func (this *App) pushEs(done chan struct{}) {
 	}
 }
 
-func (this *App) consumer(done chan struct{}) {
+func (this *App) consumer() {
 	defer this.wg.Done()
 	defer func() {
-		done <- struct{}{}
+		this.done <- struct{}{}
 	}()
 	version, err := sarama.ParseKafkaVersion(config.Conf.KafkaVersion)
 	if err != nil {
@@ -218,7 +224,6 @@ func (this *App) consumer(done chan struct{}) {
 		for {
 			select {
 			case <-this.ctx.Done():
-				this.done <- struct{}{}
 				return
 			default:
 				if err := client.Consume(this.ctx, strings.Split(config.Conf.ConsumerTopics, ","), this.consumerHandler); err != nil {
