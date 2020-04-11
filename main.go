@@ -7,14 +7,14 @@ import (
 )
 
 var configFile = flag.String("config", "./etc/config.toml", "go-canal-es config file")
-var es_addr = flag.String("es_addr", "", "Elasticsearch addr")
+var esAddr = flag.String("es_addr", "", "Elasticsearch addr")
 var logLevel = flag.String("log_level", "info", "log level")
 
 func main() {
-	application,err := app.Default(*configFile)
 	flag.Parse()
-	if *es_addr != "" {
-		config.Conf.ESAddr = *es_addr
+	application,err := app.Default(*configFile)
+	if *esAddr != "" {
+		config.Conf.ESAddr = *esAddr
 	}
 	if *logLevel != "" {
 		config.Conf.LogLevel = *logLevel

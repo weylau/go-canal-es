@@ -13,7 +13,7 @@ import (
 
 var Loger *logrus.Logger
 
-func InitLoger() {
+func Default() {
 	setLevel()
 	Loger = logrus.New()
 	if config.Conf.Debug != true{

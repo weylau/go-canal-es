@@ -88,7 +88,7 @@ func Default(config_file string) (*App, error) {
 		Ready: make(chan bool),
 		app:   app,
 	}
-	err := config.InitConfig(config_file)
+	err := config.Default(config_file)
 	if err != nil {
 		panic(errors.ErrorStack(err))
 	}
@@ -96,7 +96,7 @@ func Default(config_file string) (*App, error) {
 	if err != nil {
 		panic(errors.ErrorStack(err))
 	}
-	loger.InitLoger()
+	loger.Default()
 	cfg := new(elastic.ClientConfig)
 	cfg.Addr = config.Conf.ESAddr
 	cfg.User = config.Conf.ESUser

@@ -37,8 +37,8 @@ type TomlDuration struct {
 
 var Conf *Config
 
-func InitConfig(configfile string) (error) {
-	data, err := ioutil.ReadFile(configfile)
+func Default(configFile string) (error) {
+	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return errors.Trace(err)
 	}
